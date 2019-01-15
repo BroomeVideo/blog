@@ -1,0 +1,17 @@
+{
+    "name": "blog",
+    "scripts": {
+        "lint": "tslint -c tslint.json '*.ts'",
+        "test": "npm run lint"
+    },
+    "devDependencies": {
+        "@types/node": "latest",
+        "tslint": "^5.12.1",
+        "typescript": "^3.2.2"
+    },
+    "dependencies": {
+        "@pulumi/aws": "^0.16.5",
+        "@pulumi/kubernetes": "latest",
+        "@pulumi/pulumi": "latest"
+    }
+}
