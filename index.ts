@@ -1,3 +1,4 @@
+import * as aws from "@pulumi/aws";
 import * as k8s from "@pulumi/kubernetes";
 import * as pulumi from "@pulumi/pulumi";
 
@@ -8,6 +9,8 @@ const appLabels = {
 
 const config = new pulumi.Config();
 const infraStackName = config.require("infraStackName");
+export const domain = config.require("domain");
+export const url = `http://${domain}`;
 
 // Get a reference to the infrastructure stack.
 const infraStack = new pulumi.StackReference("infraStack", { name: infraStackName });
@@ -43,6 +46,7 @@ const deployment = new k8s.apps.v1.Deployment(
                             name: "ghost",
                             image: "ghost",
                             env: [
+                                { name: "url", value: url },
                                 { name: "database__client", value: dbConfig.apply(c => c.blog.client) },
                                 { name: "database__connection__host", value: dbConfig.apply(c => c.blog.host) },
                                 { name: "database__connection__port", value: dbConfig.apply(c => c.blog.port.toString()) },
@@ -85,6 +89,31 @@ const blog = new k8s.core.v1.Service(
         provider: k8sProvider,
     }
 );
+
+// Create a Route53 CNAME record for the blog service.
+async function createCnameRecord(service: k8s.core.v1.Service, targetDomain: string): Promise<aws.route53.Record> {
+    const [alias, ...parent] = targetDomain.split(".");
+    const host = service.status.apply(status => status.loadBalancer.ingress[0].hostname);
+
+    // Query AWS for the parent domain's hosted zone ID in order to associate
+    // it with the new CNAME record.
+    const parentZone = await aws.route53.getZone({ name: `${parent.join(".")}.` });
+
+    return new aws.route53.Record(
+        targetDomain,
+        {
+            name: alias,
+            zoneId: parentZone.zoneId,
+            type: "CNAME",
+            ttl: 300,
+            records: [
+                host
+            ]
+        }
+    );
+}
+
+createCnameRecord(blog, domain);
 
 // Export the blog's public hostname.
 export const host = blog.status.apply(status => status.loadBalancer.ingress[0].hostname);
