@@ -44,7 +44,7 @@ const deployment = new k8s.apps.v1.Deployment(
                             // https://ghost.org/
                             // https://hub.docker.com/_/ghost/
                             name: "ghost",
-                            image: "ghost",
+                            image: "ghost:2",
                             env: [
                                 { name: "url", value: url },
                                 { name: "database__client", value: dbConfig.apply(c => c.blog.client) },
