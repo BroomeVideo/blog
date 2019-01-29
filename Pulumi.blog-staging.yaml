@@ -1,4 +1,4 @@
 config:
   aws:region: us-west-2
   blog:domain: blog-staging.broome.io
-  blog:infraStackName: broomevideo/infra-staging
+  blog:infraStackName: broomevideo/infra/infra-staging
